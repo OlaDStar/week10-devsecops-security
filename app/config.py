@@ -1,7 +1,7 @@
-# Vulnerable configuration file
+import os
 
-AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
-GITHUB_TOKEN = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
-DATABASE_PASSWORD = "SuperSecretPassword123"
+DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
