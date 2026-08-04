@@ -1,91 +1,183 @@
-# PayliteNG Security Report
+# Security Report — Week 10 DevSecOps Pipeline
 
-## Overview
+## 1. Executive Summary
 
-This report documents security testing performed on the PayliteNG application using automated DevSecOps tools.
+This report documents the security assessment and automated security pipeline implemented for the `week10-devsecops-security` project.
 
-## Security Tools Used
+The objective was to integrate security testing into the CI/CD workflow to identify vulnerable code, insecure dependencies, and exposed secrets before changes are merged into the main branch.
 
-| Tool | Purpose |
-|---|---|
-| Bandit | Static Application Security Testing |
-| pip-audit | Dependency vulnerability scanning |
-| Gitleaks | Secret detection |
+The implemented DevSecOps pipeline uses:
+- Bandit for Static Application Security Testing (SAST)
+- pip-audit for Software Composition Analysis (SCA)
+- Gitleaks for secret detection
 
-## Findings
-
-### 1. SQL Injection
-
-Tool:
-Bandit
-
-Risk:
-Attackers can manipulate SQL queries and access unauthorized data.
-
-OWASP Category:
-A03 Injection
-
-Fix:
-Implemented parameterized SQL queries.
+The security checks are automatically executed through GitHub Actions during pull requests to ensure insecure code does not reach production.
 
 ---
 
-### 2. Weak Password Hashing
+# 2. Security Tools Used
 
-Tool:
-Bandit
+## Bandit (SAST)
 
-Risk:
-MD5 can be cracked using modern password cracking tools.
+Purpose:
+Bandit analyzes Python source code to identify common security issues such as:
+- SQL injection risks
+- Weak cryptographic algorithms
+- Command injection
+- Hardcoded credentials
 
-OWASP Category:
-A02 Cryptographic Failures
+Command used:
 
-Fix:
-Replaced MD5 with stronger hashing.
+```bash
+bandit -r app/
 
----
 
-### 3. Command Injection
+## pip-audit (Dependency Scanning)
 
-Tool:
-Bandit
+Purpose:
+pip-audit checks third-party Python packages against known vulnerability databases and identifies dependencies with published CVEs.
 
-Risk:
-Attackers may execute arbitrary commands.
+Command used:
 
-OWASP Category:
-A03 Injection
+pip-audit -r requirements.txt
+Gitleaks (Secret Detection)
 
-Fix:
-Used safe subprocess execution.
+Purpose:
+Gitleaks scans source code and Git history for accidentally exposed secrets such as:
 
----
+API keys
+Passwords
+Tokens
+Credentials
 
-### 4. Hardcoded Secrets
+Command used:
 
-Tool:
-Gitleaks
+gitleaks detect --source . --verbose
 
-Risk:
-Credentials can be exposed through Git history.
 
-OWASP Category:
-A07 Identification and Authentication Failures
+pip-audit (Dependency Scanning)
 
-Fix:
-Removed secrets and used environment variables.
+Purpose:
+pip-audit checks third-party Python packages against known vulnerability databases and identifies dependencies with published CVEs.
 
----
+Command used:
 
-## Lessons Learned
+pip-audit -r requirements.txt
+Gitleaks (Secret Detection)
 
-Security must be integrated early into the development lifecycle. Automated security pipelines detect issues before deployment and reduce the cost of fixing vulnerabilities.
+Purpose:
+Gitleaks scans source code and Git history for accidentally exposed secrets such as:
 
-| Vulnerability       | Exploitation Risk               | OWASP Category              | Remediation                           |
-| ------------------- | ------------------------------- | --------------------------- | ------------------------------------- |
-| SQL Injection       | Database compromise, data theft | A03 Injection               | Parameterized queries                 |
-| Command Injection   | Remote command execution        | A03 Injection               | Avoid shell execution, validate input |
-| Weak MD5 Hashing    | Password cracking               | A02 Cryptographic Failures  | Use bcrypt/strong hashing             |
-| Hardcoded Secrets   | Credential theft                | A07 Authentication Failures | Use environment variables             |
-| Vulnerable Packages | Exploitation through CVEs       | A06 Vulnerable Components   | Update dependencies                   |
+API keys
+Passwords
+Tokens
+Credentials
+
+Command used:
+
+gitleaks detect --source . --verbose
+
+| Finding               | Severity   | Description                                       | Remediation                             |
+| --------------------- | ---------- | ------------------------------------------------- | --------------------------------------- |
+| SQL Injection         | Medium     | User input was directly included in SQL queries   | Use parameterized SQL queries           |
+| Weak Hashing (MD5)    | High       | MD5 is insecure for password protection           | Replace with bcrypt or stronger hashing |
+| Command Injection     | High       | Unsafe command execution can allow attacker input | Use secure subprocess methods           |
+| Hardcoded Credentials | Low/Medium | Secrets stored directly in source code            | Move secrets to environment variables   |
+
+
+4. Dependency Findings & CVEs
+
+The dependency scan was performed using pip-audit.
+
+Command:
+
+pip-audit -r requirements.txt
+
+| Package                   | Version        | Vulnerability                              | Fix              |
+| ------------------------- | -------------- | ------------------------------------------ | ---------------- |
+| Flask                     | 2.0.1          | PYSEC vulnerabilities                      | Upgrade Flask    |
+| Requests                  | 2.25.1         | Known CVEs                                 | Upgrade requests |
+| Other vulnerable packages | Older versions | Security issues from outdated dependencies | Update packages  |
+
+
+After updating dependencies, pip-audit was executed again to confirm remediation.
+
+Final scan result:
+
+No known vulnerabilities found
+
+5. Secret Findings
+
+Gitleaks was used to scan the repository for exposed secrets.
+
+Command:
+
+gitleaks detect --source . --verbose
+
+Initial findings included:
+
+Hardcoded database passwords
+Fake API keys
+Test credentials
+
+Remediation:
+
+Removed secrets from source files
+Added secrets to environment variables
+Updated .gitignore to prevent accidental commits
+
+Final Gitleaks scan:
+
+No leaks found
+6. Remediation Steps Taken
+
+The following security improvements were implemented:
+
+Code Security
+Removed insecure functions
+Replaced weak cryptographic methods
+Applied secure coding practices
+Sanitized user input
+Dependency Security
+Identified vulnerable packages using pip-audit
+Updated dependencies to secure versions
+Re-ran scans after updates
+Secret Management
+Removed plaintext secrets
+Added environment variable usage
+Added secret detection to CI/CD pipeline
+CI/CD Security
+
+GitHub Actions was configured to automatically run:
+
+Bandit SAST scan
+pip-audit dependency scan
+Gitleaks secret scan
+
+The pipeline blocks insecure code from being merged.
+
+7. Final Result & Pipeline Verification
+
+The final DevSecOps pipeline successfully performs automated security testing.
+
+Pipeline checks:| Security Check       | Tool      | Status |
+| -------------------- | --------- | ------ |
+| Static Code Analysis | Bandit    | Passed |
+| Dependency Scanning  | pip-audit | Passed |
+| Secret Detection     | Gitleaks  | Passed |
+
+Successful pipeline verification confirms that the application passes security checks before merging.
+
+8. Lessons Learned
+
+This project demonstrated the importance of integrating security into the software development lifecycle.
+
+Key lessons learned:
+
+Security testing should happen early through shift-left practices.
+Automated tools reduce the chance of vulnerabilities reaching production.
+CI/CD pipelines can act as security gates.
+Developers share responsibility for application security.
+Secrets should never be stored directly inside source code.
+
+Implementing DevSecOps practices makes vulnerability detection faster, cheaper, and more reliable.
